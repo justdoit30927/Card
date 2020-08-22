@@ -1,0 +1,209 @@
+<html>
+<head>
+    <script src="../Jquery/jquery-3.4.1.js"></script>
+    <script src="../Vue/vue.js"></script>
+    <link rel=stylesheet type="text/css" href="./fontawesome/css/all.css">
+    <link rel=stylesheet type="text/css" href="./Css/Cake.css">
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/6.5.0/firebase.js"></script>
+    <script>
+        var cvRecordMark = true;
+        var cvUser = "";
+        var myAdress= location.href;
+        var myPara = myAdress.split("?");
+        /*資料庫設定*/
+        var firebaseConfig = {
+            databaseURL: "https://card-beef8.firebaseio.com/",
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        if(myPara.length > 1){
+            if(myPara[1] === "User=HSIAO"){
+                cvUser = "筱捷";
+            } 
+            else{
+                cvUser = myPara[1].split("=")[1]; 
+            }           
+        }       
+        //開啟紀錄      
+        //建立連線
+        if(cvRecordMark === true){
+            var db = firebase.database();
+            var myDate = new Date();
+            var myTime = myDate.toString();
+
+            db.ref("/DB01/EnterTime").push({
+                EnterUserName:cvUser,
+                EnterTime: myTime,                   
+            })
+        }
+        
+
+        $(document).ready(function(){
+            var app = new Vue({
+                el:"#Vue-Area",
+                data:{                    
+                    HappyBirthdayDialogMark:true,//一開始的祝福
+                    AnimationShowMark:false,//動畫是否要顯示
+                    Scenery:"AnimaitionInit",
+                    EndSceneryMark:false,
+                    WishRemindText:"請輸入第一個願望",
+                    WishCount:1,//計算第幾個願望
+                    WishText:"",
+                    //祝福視窗
+                    HBDText:"",
+                    //詢問視窗
+                    AskDialogMark:false,                    
+                    AskText:"確定不許願?",
+                    RefuseMark:false,//詢問視窗記號
+                    AgreeCount:0,//紀錄按了第幾次不許願
+                },
+                methods:{
+                    //按下許願
+                    clickWishBtn:function(){
+                        this.Vailfy();
+                    },
+                    //檢查是否有輸入願望
+                    Vailfy:function(){
+                        if(this.WishText === "" && this.RefuseMark != true){                            
+                            this.openAsk();
+                        }   
+                        else{
+                            this.recordWish(this.WishText,this.WishCount);
+                            this.WishText ="";//清空
+                            this.WishCount++;//計算這是第幾個願望
+                            switch(this.WishCount){
+                                case 2:
+                                    this.Scenery = "Animaition1";
+                                    this.WishRemindText = "請輸入第二個願望";
+                                    break;
+                                case 3:
+                                    this.Scenery = "Animaition2";
+                                    this.WishRemindText = "請輸入第三個願望";
+                                    break;
+                                case 4:
+                                    this.AnimationShowMark = false; //把蛋糕關掉
+                                    this.EndSceneryMark = true;//把最後的畫面打開
+                                    break;
+                            }
+                        }                         
+                    },
+                    //紀錄願望
+                    recordWish:function(Wish_Text,Wish_Num){
+                        if(cvRecordMark === true){
+                            //建立連線
+                            var db = firebase.database();
+                            var myDate = new Date();
+                            var myTime = myDate.toString();
+
+                            db.ref("/DB01/Wish").push({
+                                EnterUserName:cvUser,
+                                EnterTime: myTime,
+                                Number:Wish_Num,    
+                                Wish:Wish_Text,               
+                            })
+                        }
+                    },
+                    chooseAgree:function(){                        
+                        this.AgreeCount++;
+                        switch (this.AgreeCount){
+                            case 1:
+                                this.AskText="就算我很想知道也不行?\n拜託!!";
+                                break;
+                            case 2:
+                                this.AskText="真的不考慮一下嗎?";
+                                break;
+                            case 3:
+                                this.AskText="那個我是不是被討厭了";
+                                break;
+                            case 4:
+                                this.AskText="好吧沒關係，也許下次?";
+                                break;
+                            default:
+                                this.RefuseMark = true;
+                                this.AskDialogMark = false;
+                                this.clickWishBtn();//自動進到下個願望
+                                break;
+                        }
+                    },
+                    chooseDeny:function(){                        
+                        this.AskDialogMark = false;    
+                    },
+                    //提醒忘了許願
+                    openAsk(){
+                        this.AskDialogMark = true;
+                    },
+                    //關閉 生日快樂跳窗
+                    closeHBD:function(){
+                        this.HappyBirthdayDialogMark = false;
+                        this.AnimationShowMark = true;
+                    },
+                    //關閉 提醒
+                    closeAsk:function(){
+                        this.AskDialogMark = false;                        
+                    }
+                },
+                created:function(){
+                    this.HBDText = cvUser + "祝妳生日快樂";
+                }
+            })
+
+        })
+        
+    </script>
+</head>
+<body>
+    <div id="Vue-Area">
+        <div class="postion1" v-show="AnimationShowMark">
+            <!-- 動畫 區塊-->
+            <div class="AnimationArea">
+                <div :id="Scenery" class="AnimationSet"></div>
+            </div>
+
+            <!-- 許願 按鈕-->
+            <div class="wishArea">
+                <div>
+                    <div>
+                        <textarea type="text" id="inputWish" :placeholder="WishRemindText" v-model="WishText"></textarea>
+                    </div>
+                    <div id="inputWishBtn" class="Button" @click="clickWishBtn()">許願</div>
+                </div>                
+            </div>
+        </div>
+
+        <!-- 祝福 跳窗-->
+        <div class="postion2 dialog" v-show="HappyBirthdayDialogMark" >
+            <div>
+                <div class="fas fa-times-circle fa-2x close" @click="closeHBD()"></div>
+                <div class="textArea">
+                    {{HBDText}}
+                </div>
+            </div>
+        </div>
+        <!-- 詢問是否許願 跳窗-->
+        <div id="AskDialog" class="postion2 dialog" v-show="AskDialogMark" >
+            <div>
+                <div class="fas fa-times-circle fa-2x close" @click="closeAsk()"></div>
+                <div class="textArea">
+                    {{AskText}}
+                </div>
+                <div class="buttonArea">
+                    <div class="btn agree" @click="chooseAgree()">是</div>
+                    <div class="btn deny" @click="chooseDeny()">否</div>
+                </div>
+            </div>
+        </div>
+        <!-- 把最後的畫面打開 -->
+        <div id="EndDialog" class="postion2 dialog" v-show="EndSceneryMark" >
+            <div>
+                <div>
+                    已收到願望<br/>
+                    希望妳的願望都能實現<br/>
+                    妳最近過得如何呢?<br/>
+                    <p style="font-size:20px">宣傳一下最近才知道沒用的小知識：愛玉只台灣才有</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
