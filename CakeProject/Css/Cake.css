@@ -1,5 +1,10 @@
 @import url(https://fonts.googleapis.com/earlyaccess/cwtexyen.css);/*載入字體*/
 /*-----------------------------------Vue 區域 + 定位-----------------------------*/
+body{
+    display: flex;
+    justify-content: center;
+}
+
 #Vue-Area{
     position: relative;
     width: 100%;
@@ -8,6 +13,7 @@
     height:100%;
     max-height: 600px;
     background-color: rgba(251, 246, 240, 0.753);
+    border:solid 2px;
 }
 /*動畫顯示區域*/
 .postion1{
@@ -183,7 +189,6 @@
     justify-content: center;
     align-items:center;
     font-size: 35px;
-    overflow:overflow-y;
 }
 
 /*----------------------------------- 動畫邏輯-----------------------------*/
